@@ -7,10 +7,15 @@ export const quizService = {
     return response.data;
   },
   
-  getAllQuizzes: async () => {
+ getAllQuizzes: async () => {
+  try {
     const response = await api.get('/admin/quizzes');
     return response.data;
-  },
+  } catch (error) {
+    console.error('Error in getAllQuizzes:', error);
+    throw error;
+  }
+},
   
   updateQuiz: async (id, quizData) => {
     const response = await api.put(`/admin/quiz/${id}`, quizData);
