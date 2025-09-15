@@ -36,22 +36,43 @@ const QuizPlayer = () => {
     try {
       setLoading(true);
       const attemptData = await quizService.startQuizAttempt(id);
-      setAttemptId(attemptData.attemptId);
-      setQuiz(attemptData.quiz);
-      setTotalQuestions(attemptData.quiz.questions.length);
-      setTimeLeft(attemptData.quiz.timeLimit * 60);
       
-      // Start timer
-      const quizTimer = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-      setTimer(quizTimer);
-      
-      // Load first question
-      await loadNextQuestion();
+      // Handle different response structures
+      if (attemptData.attemptId) {
+        setAttemptId(attemptData.attemptId);
+        
+        // The quiz data might be in different properties
+        const quizData = attemptData.quiz || attemptData;
+        setQuiz(quizData);
+        
+        // Get total questions - handle different structures
+        let questionsLength = 0;
+        if (quizData.questions && Array.isArray(quizData.questions)) {
+          questionsLength = quizData.questions.length;
+        } else if (quizData.totalQuestions) {
+          questionsLength = quizData.totalQuestions;
+        }
+        
+        setTotalQuestions(questionsLength);
+        
+        // Set time limit - handle different property names
+        const timeLimit = quizData.timeLimit || quizData.minutes || 10;
+        setTimeLeft(timeLimit * 60);
+        
+        // Start timer
+        const quizTimer = setInterval(() => {
+          setTimeLeft(prev => Math.max(0, prev - 1));
+        }, 1000);
+        setTimer(quizTimer);
+        
+        // Load first question
+        await loadNextQuestion();
+      } else {
+        setError('Failed to start quiz: No attempt ID received');
+      }
     } catch (error) {
-      setError('Failed to start quiz: ' + (error.response?.data?.error || 'Unknown error'));
       console.error('Error starting quiz:', error);
+      setError('Failed to start quiz: ' + (error.response?.data?.error || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -62,7 +83,6 @@ const QuizPlayer = () => {
       const questionData = await quizService.getAttemptQuestion(attemptId);
       setCurrentQuestion(questionData);
       setSelectedAnswer('');
-      setQuestionIndex(prev => prev + 1);
     } catch (error) {
       if (error.response?.status === 404) {
         // No more questions, quiz completed
@@ -87,7 +107,9 @@ const QuizPlayer = () => {
         setScore(prev => prev + 1);
       }
       
-      if (questionIndex < totalQuestions) {
+      // Check if there are more questions or quiz is completed
+      if (questionIndex < totalQuestions - 1) {
+        setQuestionIndex(prev => prev + 1);
         await loadNextQuestion();
       } else {
         completeQuiz();
@@ -149,15 +171,15 @@ const QuizPlayer = () => {
         <Card.Header>
           <Row className="align-items-center">
             <Col>
-              <h3>{quiz.name}</h3>
-              <p className="mb-0">Question {questionIndex} of {totalQuestions}</p>
+              <h3>{quiz?.name || 'Quiz'}</h3>
+              <p className="mb-0">Question {questionIndex + 1} of {totalQuestions}</p>
             </Col>
             <Col xs="auto">
               <h4>Time: {formatTime(timeLeft)}</h4>
             </Col>
           </Row>
           <ProgressBar 
-            now={(questionIndex / totalQuestions) * 100} 
+            now={((questionIndex + 1) / totalQuestions) * 100} 
             className="mt-2" 
           />
         </Card.Header>
@@ -170,7 +192,7 @@ const QuizPlayer = () => {
               <h4 className="mb-4">{currentQuestion.questionText}</h4>
               
               <div className="d-grid gap-2">
-                {currentQuestion.options.map((option, index) => (
+                {currentQuestion.choices && currentQuestion.choices.map((option, index) => (
                   <Button
                     key={index}
                     variant={selectedAnswer === option ? 'primary' : 'outline-primary'}
@@ -192,7 +214,7 @@ const QuizPlayer = () => {
             onClick={handleAnswerSubmit}
             disabled={!selectedAnswer}
           >
-            {questionIndex < totalQuestions ? 'Next Question' : 'Finish Quiz'}
+            {questionIndex < totalQuestions - 1 ? 'Next Question' : 'Finish Quiz'}
           </Button>
         </Card.Footer>
       </Card>

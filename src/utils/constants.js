@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = 'http://localhost:8080';
 export const QUIZ_CATEGORIES = [
   'General Knowledge', 'Entertainment: Books', 'Entertainment: Film', 
   'Entertainment: Music', 'Entertainment: Musicals & Theatres', 

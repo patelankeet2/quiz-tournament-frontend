@@ -7,10 +7,9 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
     name: '',
     category: '',
     difficulty: '',
-    description: '',
-    timeLimit: 10,
-    maxAttempts: 1,
-    isPublic: true
+    startDate: '',
+    endDate: '',
+    minPassingPercentage: 60
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -21,20 +20,18 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
         name: quiz.name || '',
         category: quiz.category || '',
         difficulty: quiz.difficulty || '',
-        description: quiz.description || '',
-        timeLimit: quiz.timeLimit || 10,
-        maxAttempts: quiz.maxAttempts || 1,
-        isPublic: quiz.isPublic !== undefined ? quiz.isPublic : true
+        startDate: quiz.startDate ? new Date(quiz.startDate).toISOString().slice(0, 16) : '',
+        endDate: quiz.endDate ? new Date(quiz.endDate).toISOString().slice(0, 16) : '',
+        minPassingPercentage: quiz.minPassingPercentage || 60
       });
     } else {
       setFormData({
         name: '',
         category: '',
         difficulty: '',
-        description: '',
-        timeLimit: 10,
-        maxAttempts: 1,
-        isPublic: true
+        startDate: '',
+        endDate: '',
+        minPassingPercentage: 60
       });
     }
     setErrors({});
@@ -46,8 +43,19 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.category) newErrors.category = 'Category is required';
     if (!formData.difficulty) newErrors.difficulty = 'Difficulty is required';
-    if (formData.timeLimit < 1) newErrors.timeLimit = 'Time limit must be at least 1 minute';
-    if (formData.maxAttempts < 1) newErrors.maxAttempts = 'Max attempts must be at least 1';
+    if (!formData.startDate) newErrors.startDate = 'Start date is required';
+    if (!formData.endDate) newErrors.endDate = 'End date is required';
+    if (formData.minPassingPercentage < 0 || formData.minPassingPercentage > 100) 
+      newErrors.minPassingPercentage = 'Min passing percentage must be between 0 and 100';
+    
+    // Check if end date is after start date
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (end <= start) {
+        newErrors.endDate = 'End date must be after start date';
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -76,7 +84,14 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
     
     setLoading(true);
     try {
-      await onSubmit(formData);
+      // Convert dates to proper format for backend
+      const submitData = {
+        ...formData,
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: new Date(formData.endDate).toISOString()
+      };
+      
+      await onSubmit(submitData);
       handleClose();
     } catch (error) {
       setErrors({ submit: error.response?.data?.error || 'Failed to save quiz' });
@@ -151,60 +166,57 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
-            <Col md={3}>
+            <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Time Limit (minutes) *</Form.Label>
+                <Form.Label>Min Passing Percentage *</Form.Label>
                 <Form.Control
                   type="number"
-                  name="timeLimit"
-                  value={formData.timeLimit}
+                  name="minPassingPercentage"
+                  value={formData.minPassingPercentage}
                   onChange={handleChange}
-                  min="1"
-                  isInvalid={!!errors.timeLimit}
+                  min="0"
+                  max="100"
+                  isInvalid={!!errors.minPassingPercentage}
                 />
                 <Form.Control.Feedback type="invalid">
-                  {errors.timeLimit}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group className="mb-3">
-                <Form.Label>Max Attempts *</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="maxAttempts"
-                  value={formData.maxAttempts}
-                  onChange={handleChange}
-                  min="1"
-                  isInvalid={!!errors.maxAttempts}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.maxAttempts}
+                  {errors.minPassingPercentage}
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
           </Row>
           
-          <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          
-          <Form.Check
-            type="switch"
-            id="isPublic"
-            name="isPublic"
-            label="Make this quiz public"
-            checked={formData.isPublic}
-            onChange={handleChange}
-            className="mb-3"
-          />
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Start Date *</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  isInvalid={!!errors.startDate}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.startDate}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>End Date *</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  isInvalid={!!errors.endDate}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.endDate}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+          </Row>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>

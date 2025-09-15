@@ -26,22 +26,43 @@ const Login = ({ onLogin }) => {
 
     try {
       const response = await authService.login(credentials);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify({ 
-        username: credentials.username, 
-        role: response.role 
-      }));
       
-      onLogin({ username: credentials.username, role: response.role });
-      
-      // Redirect based on role
-      if (response.role === 'ADMIN') {
-        navigate('/admin');
+      // Check if response contains token
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        
+        // Store user info with role (default to PLAYER if not provided)
+        const userData = {
+          username: credentials.username,
+          role: response.role || 'PLAYER'
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        onLogin(userData);
+        
+        // Redirect based on role
+        if (userData.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/player');
+        }
       } else {
-        navigate('/player');
+        setError('Invalid response from server: No token received');
       }
     } catch (error) {
-      setError(error.response?.data?.error || 'Login failed');
+      console.error('Login error:', error);
+      
+      // Handle different error response formats
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -66,6 +87,7 @@ const Login = ({ onLogin }) => {
                     value={credentials.username}
                     onChange={handleChange}
                     required
+                    placeholder="Enter username"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -76,6 +98,7 @@ const Login = ({ onLogin }) => {
                     value={credentials.password}
                     onChange={handleChange}
                     required
+                    placeholder="Enter password"
                   />
                 </Form.Group>
                 <Button 
@@ -93,6 +116,9 @@ const Login = ({ onLogin }) => {
                   <Button variant="link" onClick={() => navigate('/register')}>
                     Register here
                   </Button>
+                </p>
+                <p>
+                  <small>Default admin: admin / op@1234</small>
                 </p>
               </div>
             </Card.Body>

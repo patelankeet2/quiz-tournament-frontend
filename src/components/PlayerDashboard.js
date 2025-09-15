@@ -27,27 +27,17 @@ const PlayerDashboard = () => {
       setLoading(true);
       const data = await quizService.getQuizStatus();
       
-      // Handle different response structures
+      // Handle the response structure from backend
       let quizzesData = [];
       
-      if (Array.isArray(data)) {
-        // If the response is already an array
-        quizzesData = data;
-      } else if (data && typeof data === 'object') {
-        // If the response is an object with nested arrays
-        if (data.ongoing && Array.isArray(data.ongoing)) {
-          quizzesData = [...quizzesData, ...data.ongoing];
-        }
-        if (data.upcoming && Array.isArray(data.upcoming)) {
-          quizzesData = [...quizzesData, ...data.upcoming];
-        }
-        if (data.past && Array.isArray(data.past)) {
-          quizzesData = [...quizzesData, ...data.past];
-        }
-        // If it's a single object with quizzes property
-        if (data.quizzes && Array.isArray(data.quizzes)) {
-          quizzesData = data.quizzes;
-        }
+      if (data.ongoing && Array.isArray(data.ongoing)) {
+        quizzesData = [...quizzesData, ...data.ongoing];
+      }
+      if (data.upcoming && Array.isArray(data.upcoming)) {
+        quizzesData = [...quizzesData, ...data.upcoming];
+      }
+      if (data.past && Array.isArray(data.past)) {
+        quizzesData = [...quizzesData, ...data.past];
       }
       
       setQuizzes(quizzesData);
@@ -55,7 +45,6 @@ const PlayerDashboard = () => {
     } catch (error) {
       setError('Failed to fetch quizzes');
       console.error('Error fetching quizzes:', error);
-      console.error('Error response:', error.response?.data);
     } finally {
       setLoading(false);
     }
@@ -172,15 +161,6 @@ const PlayerDashboard = () => {
         </Col>
       </Row>
 
-      {/* Debug info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Alert variant="info" className="mb-3">
-          <strong>Debug Info:</strong> Found {filteredQuizzes.length} quizzes
-          <br />
-          <small>Quizzes data type: {Array.isArray(quizzes) ? 'Array' : typeof quizzes}</small>
-        </Alert>
-      )}
-
       {/* Quizzes Grid */}
       <Row>
         {Array.isArray(filteredQuizzes) && filteredQuizzes.map(quiz => (
@@ -191,7 +171,6 @@ const PlayerDashboard = () => {
                 <Card.Text>
                   <strong>Category:</strong> {quiz.category || 'Unknown'}<br />
                   <strong>Difficulty:</strong> {getDifficultyBadge(quiz.difficulty)}<br />
-                  <strong>Time Limit:</strong> {quiz.timeLimit || 'Unknown'} minutes<br />
                   {quiz.startDate && (
                     <><strong>Start Date:</strong> {new Date(quiz.startDate).toLocaleDateString()}<br /></>
                   )}
