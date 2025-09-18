@@ -17,12 +17,22 @@ export const authService = {
   },
   
   getProfile: async () => {
-    try {
-      const response = await api.get('/api/user/me');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      throw error;
-    }
+    const response = await api.get('/api/user/me');
+    return response.data;
+  },
+  
+  updateProfile: async (userData) => {
+    const response = await api.put('/api/user/profile', userData);
+    return response.data;
+  },
+  
+  requestPasswordReset: async (email) => {
+    const response = await api.post('/api/password/request', { email });
+    return response.data;
+  },
+  
+  resetPassword: async (token, newPassword) => {
+    const response = await api.post('/api/password/perform', { token, newPassword });
+    return response.data;
   }
 };
