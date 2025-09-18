@@ -1,38 +1,57 @@
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  background-color: #f8f9fa;
 }
 
-.App-link {
-  color: #61dafb;
+.quiz-card {
+  transition: transform 0.2s;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.quiz-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+  border-radius: 5px;
+}
+
+.form-control, .form-select {
+  border-radius: 5px;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+}
+
+/* Custom styles for quiz player */
+.quiz-player .progress {
+  height: 10px;
+}
+
+.quiz-player .option-btn {
+  text-align: left;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Landing page specific styles */
+.landing-feature {
+  transition: transform 0.3s;
+}
+
+.landing-feature:hover {
+  transform: translateY(-5px);
 }
