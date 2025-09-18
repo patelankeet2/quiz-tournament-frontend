@@ -23,7 +23,7 @@ const CustomNavbar = ({ user, onLogout }) => {
                   Dashboard
                 </Nav.Link>
                 {user.role === 'ADMIN' && (
-                  <Nav.Link onClick={() => navigate('/admin/quizzes')}>
+                  <Nav.Link onClick={() => navigate('/admin')}>
                     Manage Quizzes
                   </Nav.Link>
                 )}
