@@ -13,7 +13,7 @@ const QuizPlayer = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(10); // Default to 10 questions
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -27,7 +27,7 @@ const QuizPlayer = () => {
   }, []);
 
   useEffect(() => {
-    if (timeLeft === 0 && attemptId) {
+    if (timeLeft === 0 && attemptId && !quizCompleted) {
       handleAnswerSubmit();
     }
   }, [timeLeft]);
@@ -39,12 +39,24 @@ const QuizPlayer = () => {
       
       if (attemptData.attemptId) {
         setAttemptId(attemptData.attemptId);
-        setTimeLeft(10 * 60); // 10 minutes default
-        setTotalQuestions(10); // Default to 10 questions
+        
+        // Get quiz details
+        const quizDetails = await quizService.getQuizQuestions(id);
+        setQuiz(quizDetails);
+        setTotalQuestions(quizDetails.length || 10); // Default to 10 if not specified
+        
+        // Set time limit (default 10 minutes if not specified)
+        setTimeLeft(10 * 60);
         
         // Start timer
         const quizTimer = setInterval(() => {
-          setTimeLeft(prev => Math.max(0, prev - 1));
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(quizTimer);
+              return 0;
+            }
+            return prev - 1;
+          });
         }, 1000);
         setTimer(quizTimer);
         
@@ -56,6 +68,9 @@ const QuizPlayer = () => {
     } catch (error) {
       console.error('Error starting quiz:', error);
       setError('Failed to start quiz: ' + (error.response?.data?.error || 'Unknown error'));
+      if (error.response?.status === 400) {
+        setError('You have already completed this quiz');
+      }
     } finally {
       setLoading(false);
     }
@@ -91,14 +106,11 @@ const QuizPlayer = () => {
       }
       
       // Check if there are more questions or quiz is completed
-      if (result.completed) {
-        completeQuiz();
-      } else if (result.nextIndex !== undefined) {
-        setQuestionIndex(result.nextIndex);
-        await loadNextQuestion();
-      } else {
+      if (questionIndex < totalQuestions - 1) {
         setQuestionIndex(prev => prev + 1);
         await loadNextQuestion();
+      } else {
+        completeQuiz();
       }
     } catch (error) {
       setError('Failed to submit answer');
