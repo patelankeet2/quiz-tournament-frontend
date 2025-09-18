@@ -1,4 +1,5 @@
 export const API_BASE_URL = 'http://localhost:8080';
+
 export const QUIZ_CATEGORIES = [
   'General Knowledge', 'Entertainment: Books', 'Entertainment: Film', 
   'Entertainment: Music', 'Entertainment: Musicals & Theatres', 
@@ -9,4 +10,16 @@ export const QUIZ_CATEGORIES = [
   'Entertainment: Comics', 'Science: Gadgets', 
   'Entertainment: Japanese Anime & Manga', 'Entertainment: Cartoon & Animations'
 ];
+
 export const QUIZ_DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
+export const USER_ROLES = {
+  ADMIN: 'ADMIN',
+  PLAYER: 'PLAYER'
+};
+
+export const QUIZ_STATUS = {
+  UPCOMING: 'upcoming',
+  ONGOING: 'ongoing',
+  COMPLETED: 'completed'
+};
