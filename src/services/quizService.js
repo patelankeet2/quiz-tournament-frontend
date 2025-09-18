@@ -27,36 +27,35 @@ export const quizService = {
     return response.data;
   },
   
-  getQuizQuestions: async (id) => {
-    const response = await api.get(`/api/quiz/${id}/questions`);
+  getQuizLikes: async (id) => {
+    const response = await api.get(`/api/admin/quiz/${id}/likes`);
     return response.data;
   },
   
   getAdminStats: async () => {
-    try {
-      const response = await api.get('/api/admin/stats');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching admin stats:', error);
-      // Return default stats if endpoint doesn't exist
-      return {
-        totalQuizzes: 0,
-        activeQuizzes: 0,
-        totalPlayers: 0,
-        totalAttempts: 0
-      };
-    }
+    const response = await api.get('/api/admin/stats');
+    return response.data;
+  },
+  
+  getAllUsers: async () => {
+    const response = await api.get('/api/admin/users');
+    return response.data;
+  },
+  
+  deleteUser: async (userId) => {
+    const response = await api.delete(`/api/admin/user/${userId}`);
+    return response.data;
+  },
+  
+  createAdmin: async (adminData) => {
+    const response = await api.post('/api/admin/create-admin', adminData);
+    return response.data;
   },
   
   // Player functions
-  getQuizStatus: async () => {
-    try {
-      const response = await api.get('/api/quiz/status');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching quiz status:', error);
-      return { ongoing: [], upcoming: [], past: [] };
-    }
+  getQuizQuestions: async (id) => {
+    const response = await api.get(`/api/quiz/${id}/questions`);
+    return response.data;
   },
   
   startQuizAttempt: async (id) => {
@@ -74,13 +73,69 @@ export const quizService = {
     return response.data;
   },
   
+  getLeaderboard: async (id) => {
+    const response = await api.get(`/api/quiz/${id}/leaderboard`);
+    return response.data;
+  },
+  
+  getQuizScores: async (id) => {
+    const response = await api.get(`/api/quiz/${id}/scores`);
+    return response.data;
+  },
+  
+  getQuizStatus: async () => {
+    const response = await api.get('/api/quiz/status');
+    return response.data;
+  },
+  
+  searchQuizzes: async (category) => {
+    const response = await api.get(`/api/quiz/search?category=${category}`);
+    return response.data;
+  },
+  
   getQuizHistory: async () => {
-    try {
-      const response = await api.get('/api/quiz/my-history');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching quiz history:', error);
-      return [];
-    }
+    const response = await api.get('/api/quiz/my-history');
+    return response.data;
+  },
+  
+  getRecommendations: async () => {
+    const response = await api.get('/api/quiz/recommendations');
+    return response.data;
+  },
+  
+  // Like and bookmark functions
+  likeQuiz: async (quizId) => {
+    const response = await api.post(`/api/like/${quizId}`);
+    return response.data;
+  },
+  
+  unlikeQuiz: async (quizId) => {
+    const response = await api.delete(`/api/like/${quizId}`);
+    return response.data;
+  },
+  
+  getLikeCount: async (quizId) => {
+    const response = await api.get(`/api/like/${quizId}/count`);
+    return response.data;
+  },
+  
+  bookmarkQuiz: async (quizId) => {
+    const response = await api.post(`/api/bookmarks/${quizId}`);
+    return response.data;
+  },
+  
+  removeBookmark: async (quizId) => {
+    const response = await api.delete(`/api/bookmarks/${quizId}`);
+    return response.data;
+  },
+  
+  getUserBookmarks: async () => {
+    const response = await api.get('/api/bookmarks');
+    return response.data;
+  },
+  
+  getBookmarkStatus: async (quizId) => {
+    const response = await api.get(`/api/bookmarks/${quizId}/status`);
+    return response.data;
   }
 };
