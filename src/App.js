@@ -12,6 +12,7 @@ import QuizPlayer from './components/QuizPlayer';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './components/LandingPage';
 import Unauthorized from './components/Unauthorized';
+import Profile from './components/Profile';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -82,6 +83,16 @@ function App() {
             element={
               <ProtectedRoute requiredRole="PLAYER">
                 <QuizPlayer />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Profile Route (accessible to all authenticated users) */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } 
           />
