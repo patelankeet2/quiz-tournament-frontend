@@ -40,20 +40,28 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    // Required field validation
+    if (!formData.name.trim()) newErrors.name = 'Quiz name is required';
     if (!formData.category) newErrors.category = 'Category is required';
     if (!formData.difficulty) newErrors.difficulty = 'Difficulty is required';
     if (!formData.startDate) newErrors.startDate = 'Start date is required';
     if (!formData.endDate) newErrors.endDate = 'End date is required';
-    if (formData.minPassingPercentage < 0 || formData.minPassingPercentage > 100) 
-      newErrors.minPassingPercentage = 'Min passing percentage must be between 0 and 100';
     
-    // Check if end date is after start date
+    // Numeric validation
+    if (formData.minPassingPercentage < 0 || formData.minPassingPercentage > 100) 
+      newErrors.minPassingPercentage = 'Minimum passing percentage must be between 0 and 100';
+    
+    // Date validation
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
+      
       if (end <= start) {
         newErrors.endDate = 'End date must be after start date';
+      }
+      
+      if (start < new Date()) {
+        newErrors.startDate = 'Start date cannot be in the past';
       }
     }
     
@@ -62,10 +70,10 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
     
     // Clear error when field is edited
@@ -110,7 +118,7 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
           {errors.submit && <Alert variant="danger">{errors.submit}</Alert>}
           
           <Row>
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group className="mb-3">
                 <Form.Label>Quiz Name *</Form.Label>
                 <Form.Control
@@ -119,12 +127,16 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
                   value={formData.name}
                   onChange={handleChange}
                   isInvalid={!!errors.name}
+                  placeholder="Enter quiz name"
                 />
                 <Form.Control.Feedback type="invalid">
                   {errors.name}
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
+          </Row>
+          
+          <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Category *</Form.Label>
@@ -144,9 +156,6 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
-          </Row>
-          
-          <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Difficulty *</Form.Label>
@@ -163,23 +172,6 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
                 </Form.Select>
                 <Form.Control.Feedback type="invalid">
                   {errors.difficulty}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Min Passing Percentage *</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="minPassingPercentage"
-                  value={formData.minPassingPercentage}
-                  onChange={handleChange}
-                  min="0"
-                  max="100"
-                  isInvalid={!!errors.minPassingPercentage}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.minPassingPercentage}
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
@@ -217,9 +209,32 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
               </Form.Group>
             </Col>
           </Row>
+          
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>Minimum Passing Percentage *</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="minPassingPercentage"
+                  value={formData.minPassingPercentage}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  isInvalid={!!errors.minPassingPercentage}
+                />
+                <Form.Text className="text-muted">
+                  Minimum percentage required to pass the quiz (0-100)
+                </Form.Text>
+                <Form.Control.Feedback type="invalid">
+                  {errors.minPassingPercentage}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+          </Row>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
           <Button variant="primary" type="submit" disabled={loading}>

@@ -27,25 +27,41 @@ const Login = ({ onLogin }) => {
     try {
       const response = await authService.login(credentials);
       
-      // Check if response contains token
       if (response.token) {
         localStorage.setItem('token', response.token);
         
-        // Store user info with role (default to PLAYER if not provided)
-        const userData = {
-          username: credentials.username,
-          role: response.role || 'PLAYER'
-        };
-        
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        onLogin(userData);
-        
-        // Redirect based on role
-        if (userData.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/player');
+        // Get user profile to get role
+        try {
+          const userProfile = await authService.getProfile();
+          const userData = {
+            username: userProfile.username,
+            role: userProfile.role || 'PLAYER'
+          };
+          
+          localStorage.setItem('user', JSON.stringify(userData));
+          onLogin(userData);
+          
+          // Redirect based on role
+          if (userData.role === 'ADMIN') {
+            navigate('/admin');
+          } else {
+            navigate('/player');
+          }
+        } catch (profileError) {
+          // If profile fetch fails, use basic info from login
+          const userData = {
+            username: credentials.username,
+            role: response.role || 'PLAYER'
+          };
+          
+          localStorage.setItem('user', JSON.stringify(userData));
+          onLogin(userData);
+          
+          if (response.role === 'ADMIN') {
+            navigate('/admin');
+          } else {
+            navigate('/player');
+          }
         }
       } else {
         setError('Invalid response from server: No token received');
@@ -53,7 +69,6 @@ const Login = ({ onLogin }) => {
     } catch (error) {
       console.error('Login error:', error);
       
-      // Handle different error response formats
       if (error.response?.data?.error) {
         setError(error.response.data.error);
       } else if (error.response?.data?.message) {

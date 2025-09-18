@@ -13,7 +13,7 @@ const QuizPlayer = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(10); // Default to 10 questions
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -37,27 +37,10 @@ const QuizPlayer = () => {
       setLoading(true);
       const attemptData = await quizService.startQuizAttempt(id);
       
-      // Handle different response structures
       if (attemptData.attemptId) {
         setAttemptId(attemptData.attemptId);
-        
-        // The quiz data might be in different properties
-        const quizData = attemptData.quiz || attemptData;
-        setQuiz(quizData);
-        
-        // Get total questions - handle different structures
-        let questionsLength = 0;
-        if (quizData.questions && Array.isArray(quizData.questions)) {
-          questionsLength = quizData.questions.length;
-        } else if (quizData.totalQuestions) {
-          questionsLength = quizData.totalQuestions;
-        }
-        
-        setTotalQuestions(questionsLength);
-        
-        // Set time limit - handle different property names
-        const timeLimit = quizData.timeLimit || quizData.minutes || 10;
-        setTimeLeft(timeLimit * 60);
+        setTimeLeft(10 * 60); // 10 minutes default
+        setTotalQuestions(10); // Default to 10 questions
         
         // Start timer
         const quizTimer = setInterval(() => {
@@ -108,11 +91,14 @@ const QuizPlayer = () => {
       }
       
       // Check if there are more questions or quiz is completed
-      if (questionIndex < totalQuestions - 1) {
-        setQuestionIndex(prev => prev + 1);
+      if (result.completed) {
+        completeQuiz();
+      } else if (result.nextIndex !== undefined) {
+        setQuestionIndex(result.nextIndex);
         await loadNextQuestion();
       } else {
-        completeQuiz();
+        setQuestionIndex(prev => prev + 1);
+        await loadNextQuestion();
       }
     } catch (error) {
       setError('Failed to submit answer');

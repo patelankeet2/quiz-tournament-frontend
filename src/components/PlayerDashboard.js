@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Badge, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Alert, Badge, Spinner, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { quizService } from '../services/quizService';
 import { QUIZ_CATEGORIES } from '../utils/constants';
@@ -27,20 +27,13 @@ const PlayerDashboard = () => {
       setLoading(true);
       const data = await quizService.getQuizStatus();
       
-      // Handle the response structure from backend
-      let quizzesData = [];
+      // Combine all quizzes from different statuses
+      let allQuizzes = [];
+      if (data.ongoing) allQuizzes = [...allQuizzes, ...data.ongoing];
+      if (data.upcoming) allQuizzes = [...allQuizzes, ...data.upcoming];
+      if (data.past) allQuizzes = [...allQuizzes, ...data.past];
       
-      if (data.ongoing && Array.isArray(data.ongoing)) {
-        quizzesData = [...quizzesData, ...data.ongoing];
-      }
-      if (data.upcoming && Array.isArray(data.upcoming)) {
-        quizzesData = [...quizzesData, ...data.upcoming];
-      }
-      if (data.past && Array.isArray(data.past)) {
-        quizzesData = [...quizzesData, ...data.past];
-      }
-      
-      setQuizzes(quizzesData);
+      setQuizzes(allQuizzes);
       setError('');
     } catch (error) {
       setError('Failed to fetch quizzes');
@@ -52,23 +45,34 @@ const PlayerDashboard = () => {
 
   const fetchPlayerStats = async () => {
     try {
-      const data = await quizService.getQuizHistory();
-      const historyData = Array.isArray(data) ? data : [];
+      const historyData = await quizService.getQuizHistory();
+      const historyArray = Array.isArray(historyData) ? historyData : [];
+      
+      const totalScore = historyArray.reduce((sum, attempt) => sum + (attempt.score || 0), 0);
+      const averageScore = historyArray.length > 0 ? (totalScore / historyArray.length) : 0;
+      const passedQuizzes = historyArray.filter(attempt => attempt.passed).length;
       
       setStats({
-        totalAttempts: historyData.length,
-        averageScore: historyData.length > 0 
-          ? (historyData.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / historyData.length).toFixed(1)
-          : 0,
-        completedQuizzes: historyData.filter(attempt => attempt.completed).length
+        totalAttempts: historyArray.length,
+        averageScore: averageScore.toFixed(1),
+        completedQuizzes: historyArray.length,
+        passedQuizzes: passedQuizzes,
+        successRate: historyArray.length > 0 ? ((passedQuizzes / historyArray.length) * 100).toFixed(1) : 0
       });
     } catch (error) {
       console.error('Error fetching player stats:', error);
+      setStats({
+        totalAttempts: 0,
+        averageScore: 0,
+        completedQuizzes: 0,
+        passedQuizzes: 0,
+        successRate: 0
+      });
     }
   };
 
   const filterQuizzes = () => {
-    let filtered = Array.isArray(quizzes) ? [...quizzes] : [];
+    let filtered = [...quizzes];
     
     if (categoryFilter) {
       filtered = filtered.filter(quiz => quiz.category === categoryFilter);
@@ -93,6 +97,24 @@ const PlayerDashboard = () => {
     return <Badge bg={variants[difficulty] || 'secondary'}>{difficulty}</Badge>;
   };
 
+  const getQuizStatus = (quiz) => {
+    const now = new Date();
+    const startDate = quiz.startDate ? new Date(quiz.startDate) : null;
+    const endDate = quiz.endDate ? new Date(quiz.endDate) : null;
+    
+    if (startDate && endDate) {
+      if (now < startDate) {
+        return { status: 'upcoming', variant: 'info' };
+      } else if (now > endDate) {
+        return { status: 'ended', variant: 'secondary' };
+      } else {
+        return { status: 'active', variant: 'success' };
+      }
+    }
+    
+    return { status: 'available', variant: 'success' };
+  };
+
   if (loading) {
     return (
       <Container className="mt-4 text-center">
@@ -112,7 +134,7 @@ const PlayerDashboard = () => {
 
       {/* Player Statistics */}
       <Row className="mb-4">
-        <Col md={4}>
+        <Col md={3}>
           <Card className="text-center">
             <Card.Body>
               <Card.Title>Total Attempts</Card.Title>
@@ -120,7 +142,7 @@ const PlayerDashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
+        <Col md={3}>
           <Card className="text-center">
             <Card.Body>
               <Card.Title>Average Score</Card.Title>
@@ -128,7 +150,7 @@ const PlayerDashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
+        <Col md={3}>
           <Card className="text-center">
             <Card.Body>
               <Card.Title>Completed Quizzes</Card.Title>
@@ -136,7 +158,35 @@ const PlayerDashboard = () => {
             </Card.Body>
           </Card>
         </Col>
+        <Col md={3}>
+          <Card className="text-center">
+            <Card.Body>
+              <Card.Title>Success Rate</Card.Title>
+              <Card.Text className="h3">{stats.successRate || 0}%</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
+
+      {/* Progress Overview */}
+      {stats.completedQuizzes > 0 && (
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                <h5 className="mb-0">Progress Overview</h5>
+              </Card.Header>
+              <Card.Body>
+                <div className="mb-2">
+                  <strong>Quizzes Passed:</strong> {stats.passedQuizzes} / {stats.completedQuizzes}
+                </div>
+                <ProgressBar now={(stats.passedQuizzes / stats.completedQuizzes) * 100} 
+                            label={`${((stats.passedQuizzes / stats.completedQuizzes) * 100).toFixed(1)}%`} />
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Filter Section */}
       <Row className="mb-3">
@@ -156,44 +206,55 @@ const PlayerDashboard = () => {
         </Col>
         <Col md={4} className="d-flex align-items-end">
           <Button variant="outline-secondary" onClick={fetchQuizzes}>
-            Refresh Quizzes
+            <i className="bi bi-arrow-clockwise"></i> Refresh Quizzes
           </Button>
         </Col>
       </Row>
 
       {/* Quizzes Grid */}
       <Row>
-        {Array.isArray(filteredQuizzes) && filteredQuizzes.map(quiz => (
-          <Col md={6} lg={4} key={quiz.id} className="mb-4">
-            <Card className="h-100 quiz-card">
-              <Card.Body>
-                <Card.Title>{quiz.name || 'Unnamed Quiz'}</Card.Title>
-                <Card.Text>
-                  <strong>Category:</strong> {quiz.category || 'Unknown'}<br />
-                  <strong>Difficulty:</strong> {getDifficultyBadge(quiz.difficulty)}<br />
-                  {quiz.startDate && (
-                    <><strong>Start Date:</strong> {new Date(quiz.startDate).toLocaleDateString()}<br /></>
-                  )}
-                  {quiz.endDate && (
-                    <><strong>End Date:</strong> {new Date(quiz.endDate).toLocaleDateString()}<br /></>
-                  )}
-                </Card.Text>
-              </Card.Body>
-              <Card.Footer>
-                <Button 
-                  variant="primary" 
-                  onClick={() => handlePlayQuiz(quiz.id)}
-                  disabled={quiz.participated}
-                >
-                  {quiz.participated ? 'Already Participated' : 'Play Quiz'}
-                </Button>
-              </Card.Footer>
-            </Card>
-          </Col>
-        ))}
+        {filteredQuizzes.map(quiz => {
+          const status = getQuizStatus(quiz);
+          return (
+            <Col md={6} lg={4} key={quiz.id} className="mb-4">
+              <Card className="h-100 quiz-card">
+                <Card.Header>
+                  <Badge bg={status.variant} className="float-end">
+                    {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+                  </Badge>
+                </Card.Header>
+                <Card.Body>
+                  <Card.Title>{quiz.name || 'Unnamed Quiz'}</Card.Title>
+                  <Card.Text>
+                    <strong>Category:</strong> {quiz.category || 'Unknown'}<br />
+                    <strong>Difficulty:</strong> {getDifficultyBadge(quiz.difficulty)}<br />
+                    {quiz.startDate && (
+                      <><strong>Start Date:</strong> {new Date(quiz.startDate).toLocaleDateString()}<br /></>
+                    )}
+                    {quiz.endDate && (
+                      <><strong>End Date:</strong> {new Date(quiz.endDate).toLocaleDateString()}<br /></>
+                    )}
+                  </Card.Text>
+                </Card.Body>
+                <Card.Footer>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => handlePlayQuiz(quiz.id)}
+                    disabled={quiz.participated || status.status !== 'active'}
+                    className="w-100"
+                  >
+                    {quiz.participated ? 'Already Participated' : 
+                     status.status === 'upcoming' ? 'Coming Soon' :
+                     status.status === 'ended' ? 'Quiz Ended' : 'Play Quiz'}
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
+          );
+        })}
       </Row>
 
-      {Array.isArray(filteredQuizzes) && filteredQuizzes.length === 0 && !loading && (
+      {filteredQuizzes.length === 0 && !loading && (
         <div className="text-center mt-4">
           <p>No quizzes available. Try changing your filters.</p>
         </div>

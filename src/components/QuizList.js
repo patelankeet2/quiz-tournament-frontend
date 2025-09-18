@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Badge, Alert, Spinner, Modal } from 'react-bootstrap';
 import { quizService } from '../services/quizService';
 
-const QuizList = ({ onEdit, refreshTrigger }) => {
+const QuizList = ({ onEdit, onView, refreshTrigger }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,8 +16,6 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
     try {
       setLoading(true);
       const data = await quizService.getAllQuizzes();
-      
-      // Handle the response from backend
       setQuizzes(Array.isArray(data) ? data : []);
       setError('');
     } catch (error) {
@@ -75,7 +73,7 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
     return (
       <div className="text-center">
         <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">Loading quizzes...</span>
         </Spinner>
         <p className="mt-2">Loading quizzes...</p>
       </div>
@@ -118,7 +116,15 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
           <tbody>
             {quizzes.map(quiz => (
               <tr key={quiz.id}>
-                <td>{quiz.name || 'Unnamed Quiz'}</td>
+                <td>
+                  <Button 
+                    variant="link" 
+                    className="p-0 text-decoration-none" 
+                    onClick={() => onView(quiz)}
+                  >
+                    {quiz.name || 'Unnamed Quiz'}
+                  </Button>
+                </td>
                 <td>{quiz.category || 'Unknown'}</td>
                 <td>{getDifficultyBadge(quiz.difficulty)}</td>
                 <td>{quiz.startDate ? new Date(quiz.startDate).toLocaleDateString() : 'N/A'}</td>
@@ -127,19 +133,30 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
                 <td>{getStatusBadge(quiz)}</td>
                 <td>
                   <Button
+                    variant="outline-info"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => onView(quiz)}
+                    title="View Details"
+                  >
+                    <i className="bi bi-eye"></i>
+                  </Button>
+                  <Button
                     variant="outline-primary"
                     size="sm"
                     className="me-2"
                     onClick={() => onEdit(quiz)}
+                    title="Edit Quiz"
                   >
-                    Edit
+                    <i className="bi bi-pencil"></i>
                   </Button>
                   <Button
                     variant="outline-danger"
                     size="sm"
                     onClick={() => setDeleteConfirm(quiz)}
+                    title="Delete Quiz"
                   >
-                    Delete
+                    <i className="bi bi-trash"></i>
                   </Button>
                 </td>
               </tr>
