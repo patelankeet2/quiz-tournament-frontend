@@ -10,6 +10,8 @@ import AdminDashboard from './components/AdminDashboard';
 import PlayerDashboard from './components/PlayerDashboard';
 import QuizPlayer from './components/QuizPlayer';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './components/LandingPage';
+import Unauthorized from './components/Unauthorized';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -37,10 +39,11 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Navbar user={user} onLogout={handleLogout} />
+        {user && <Navbar user={user} onLogout={handleLogout} />}
         
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={user ? <Navigate to={user.role === 'ADMIN' ? '/admin' : '/player'} replace /> : <LandingPage />} />
           <Route 
             path="/login" 
             element={
@@ -53,6 +56,7 @@ function App() {
             path="/register" 
             element={user ? <Navigate to="/" replace /> : <Register />} 
           />
+          <Route path="/unauthorized" element={<Unauthorized />} />
           
           {/* Protected Admin Routes */}
           <Route 
@@ -79,16 +83,6 @@ function App() {
               <ProtectedRoute requiredRole="PLAYER">
                 <QuizPlayer />
               </ProtectedRoute>
-            } 
-          />
-          
-          {/* Default Route */}
-          <Route 
-            path="/" 
-            element={
-              user ? 
-                <Navigate to={user.role === 'ADMIN' ? '/admin' : '/player'} replace /> : 
-                <Navigate to="/login" replace />
             } 
           />
           
