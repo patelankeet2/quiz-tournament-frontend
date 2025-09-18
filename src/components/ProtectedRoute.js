@@ -5,14 +5,17 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
 
+  // If no token or user, redirect to login
   if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
+  // If role is required but doesn't match, redirect to unauthorized
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
+  // Otherwise, render the protected component
   return children;
 };
 
