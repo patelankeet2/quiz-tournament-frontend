@@ -15,27 +15,27 @@ const QuizForm = ({ show, handleClose, quiz, onSubmit, mode }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (quiz) {
-      setFormData({
-        name: quiz.name || '',
-        category: quiz.category || '',
-        difficulty: quiz.difficulty || '',
-        startDate: quiz.startDate ? new Date(quiz.startDate).toISOString().slice(0, 16) : '',
-        endDate: quiz.endDate ? new Date(quiz.endDate).toISOString().slice(0, 16) : '',
-        minPassingPercentage: quiz.minPassingPercentage || 60
-      });
-    } else {
-      setFormData({
-        name: '',
-        category: '',
-        difficulty: '',
-        startDate: '',
-        endDate: '',
-        minPassingPercentage: 60
-      });
-    }
-    setErrors({});
-  }, [quiz, show]);
+  if (quiz) {
+    setFormData({
+      name: quiz.name || '',
+      category: quiz.category || '',
+      difficulty: quiz.difficulty || '',
+      startDate: quiz.startDate ? new Date(quiz.startDate).toISOString().slice(0, 16) : '',
+      endDate: quiz.endDate ? new Date(quiz.endDate).toISOString().slice(0, 16) : '',
+      minPassingPercentage: quiz.minPassingPercentage || 60
+    });
+  } else {
+    setFormData({
+      name: '',
+      category: '',
+      difficulty: '',
+      startDate: '',
+      endDate: '',
+      minPassingPercentage: 60
+    });
+  }
+  setErrors({});
+}, [quiz, show]);
 
   const validateForm = () => {
     const newErrors = {};

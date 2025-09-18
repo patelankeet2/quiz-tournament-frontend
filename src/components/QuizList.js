@@ -15,14 +15,16 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
+      console.log('Fetching quizzes list...');
       const data = await quizService.getAllQuizzes();
+      console.log('Received quizzes data:', data);
       
-      // Handle the response from backend
       setQuizzes(Array.isArray(data) ? data : []);
       setError('');
     } catch (error) {
-      setError('Failed to fetch quizzes: ' + (error.response?.data?.message || error.message));
       console.error('Error fetching quizzes:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to fetch quizzes';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -111,6 +113,7 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
               <th>Start Date</th>
               <th>End Date</th>
               <th>Min Passing %</th>
+              <th>Questions</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -124,6 +127,7 @@ const QuizList = ({ onEdit, refreshTrigger }) => {
                 <td>{quiz.startDate ? new Date(quiz.startDate).toLocaleDateString() : 'N/A'}</td>
                 <td>{quiz.endDate ? new Date(quiz.endDate).toLocaleDateString() : 'N/A'}</td>
                 <td>{quiz.minPassingPercentage || 'N/A'}%</td>
+                <td>{quiz.questionCount || 0}</td>
                 <td>{getStatusBadge(quiz)}</td>
                 <td>
                   <Button

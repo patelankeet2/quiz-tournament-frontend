@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Alert, Tab, Tabs } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Tab, Tabs, Spinner } from 'react-bootstrap';
 import QuizForm from './QuizForm';
 import QuizList from './QuizList';
 import UserManagement from './UserManagement';
@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({});
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('quizzes');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -19,10 +20,15 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
+      setLoading(true);
       const data = await quizService.getAdminStats();
       setStats(data);
+      setError('');
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setError('Failed to load statistics: ' + (error.response?.data?.error || 'Please check your connection'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,9 +37,11 @@ const AdminDashboard = () => {
       await quizService.createQuiz(quizData);
       setRefreshTrigger(prev => prev + 1);
       setError('');
+      return true;
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create quiz');
-      throw error;
+      const errorMsg = error.response?.data?.error || 'Failed to create quiz';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     }
   };
 
@@ -42,9 +50,11 @@ const AdminDashboard = () => {
       await quizService.updateQuiz(editingQuiz.id, quizData);
       setRefreshTrigger(prev => prev + 1);
       setError('');
+      return true;
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to update quiz');
-      throw error;
+      const errorMsg = error.response?.data?.error || 'Failed to update quiz';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     }
   };
 
@@ -56,13 +66,25 @@ const AdminDashboard = () => {
   const handleCloseQuizForm = () => {
     setShowQuizForm(false);
     setEditingQuiz(null);
+    setError('');
   };
+
+  if (loading) {
+    return (
+      <Container className="mt-4 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+        <p className="mt-2">Loading dashboard...</p>
+      </Container>
+    );
+  }
 
   return (
     <Container className="mt-4">
       <h1 className="text-center mb-4">Admin Dashboard</h1>
 
-      {error && <Alert variant="danger">{error}</Alert>}
+      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
       {/* Statistics Cards */}
       <Row className="mb-4">
@@ -121,7 +143,7 @@ const AdminDashboard = () => {
                 variant="outline-secondary" 
                 onClick={() => setRefreshTrigger(prev => prev + 1)}
               >
-                Refresh
+                Refresh Quizzes
               </Button>
             </Col>
           </Row>
